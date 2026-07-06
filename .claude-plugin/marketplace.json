@@ -1,0 +1,21 @@
+{
+  "name": "kspace-plugin",
+  "owner": {
+    "name": "Tennison Chan"
+  },
+  "metadata": {
+    "description": "Connect an AI agent to a KSpace for publishing artifacts for human review.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "kspace",
+      "description": "Connect this agent to a KSpace and publish artifacts for human review.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Tennison Chan"
+      },
+      "source": "./"
+    }
+  ]
+}
