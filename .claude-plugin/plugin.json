@@ -1,0 +1,8 @@
+{
+  "name": "kspace",
+  "version": "0.1.0",
+  "description": "Connect this agent to a KSpace and publish artifacts for human review.",
+  "author": {
+    "name": "Tennison Chan"
+  }
+}

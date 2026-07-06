@@ -1,0 +1,37 @@
+{
+  "name": "kspace",
+  "version": "0.1.0",
+  "description": "Connect this agent to a KSpace and publish artifacts for human review.",
+  "author": {
+    "name": "Tennison Chan"
+  },
+  "homepage": "https://github.com/tennisonchan/kspace-plugin",
+  "repository": "https://github.com/tennisonchan/kspace-plugin",
+  "license": "MIT",
+  "keywords": [
+    "agents",
+    "review",
+    "publish",
+    "kspace"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "kspace",
+    "shortDescription": "Connect an agent to a KSpace for human review",
+    "longDescription": "Log this agent into a user's KSpace (device-authorization flow, like `gh auth login`) and publish documents for structured human review — comments, approve / request-changes, and review events the agent can poll to continue the task.",
+    "developerName": "Tennison Chan",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://kspace.studio",
+    "defaultPrompt": [
+      "Connect this agent to my KSpace",
+      "Publish this document for review",
+      "Show which KSpace this agent is connected to"
+    ],
+    "screenshots": [],
+    "brandColor": "#7C3AED"
+  }
+}

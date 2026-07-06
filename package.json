@@ -1,0 +1,38 @@
+{
+  "name": "kspace-plugin",
+  "version": "0.1.0",
+  "description": "Connect an AI agent (Claude Code, Codex, or any CLI-capable agent) to a KSpace for publishing artifacts for human review.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "kspace": "bin/kspace.mjs"
+  },
+  "files": [
+    "bin",
+    "skills",
+    "commands",
+    ".claude-plugin",
+    ".codex-plugin"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tennisonchan/kspace-plugin.git"
+  },
+  "homepage": "https://kspace.studio",
+  "keywords": [
+    "kspace",
+    "claude-code-plugin",
+    "codex-plugin",
+    "agent",
+    "review"
+  ],
+  "author": {
+    "name": "Tennison Chan"
+  }
+}
