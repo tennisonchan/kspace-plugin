@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 // Point HOME at a scratch dir before importing, since the module computes
 // ~/.kspace once at import time from os.homedir().
@@ -38,4 +40,18 @@ test("writeCreds restricts the credentials file to owner read/write only", () =>
 test("readCreds returns null when no credentials file exists", () => {
   fs.rmSync(CRED_FILE, { force: true });
   assert.equal(readCreds(), null);
+});
+
+test("CLI dispatcher runs when invoked through a symlink (npm .bin shim)", () => {
+  const binPath = fileURLToPath(new URL("../bin/kspace.mjs", import.meta.url));
+  const linkPath = path.join(tmpHome, "kspace-link.mjs");
+  fs.symlinkSync(binPath, linkPath);
+  const out = execFileSync(process.execPath, [linkPath], { encoding: "utf8" });
+  assert.match(out, /Usage: kspace/);
+});
+
+test("CLI dispatcher runs when invoked directly", () => {
+  const binPath = fileURLToPath(new URL("../bin/kspace.mjs", import.meta.url));
+  const out = execFileSync(process.execPath, [binPath], { encoding: "utf8" });
+  assert.match(out, /Usage: kspace/);
 });

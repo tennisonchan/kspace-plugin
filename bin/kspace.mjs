@@ -15,6 +15,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 export const BASE_URL = (process.env.KSPACE_URL || "https://app.kspace.studio").replace(/\/$/, "");
 export const CRED_DIR = path.join(os.homedir(), ".kspace");
@@ -149,9 +150,18 @@ function logout() {
   console.log("  Forgot stored credentials.");
 }
 
-// Only run the CLI dispatcher when invoked directly (`node kspace.mjs ...`),
-// not when imported as a module (e.g. by tests).
-const isMain = process.argv[1] && import.meta.url === `file://${process.argv[1]}`;
+// Only run the CLI dispatcher when invoked directly (`node kspace.mjs ...` or
+// via the npm bin shim), not when imported as a module (e.g. by tests).
+// realpath both sides: npm invokes the bin through a .bin/kspace symlink, so
+// argv[1] and import.meta.url differ until resolved.
+const isMain = (() => {
+  if (!process.argv[1]) return false;
+  try {
+    return fs.realpathSync(fileURLToPath(import.meta.url)) === fs.realpathSync(process.argv[1]);
+  } catch {
+    return false;
+  }
+})();
 if (isMain) {
   const [cmd, ...args] = process.argv.slice(2);
   const run = { login, publish: () => publish(args), whoami, logout }[cmd];
