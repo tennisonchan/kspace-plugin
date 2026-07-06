@@ -11,16 +11,16 @@ Zero runtime dependencies: `bin/kspace.mjs` only uses Node built-ins and global 
 /plugin install kspace
 ```
 
-This gives the agent a `kspace` skill and the slash commands `/kspace:login`, `/kspace:publish`, `/kspace:whoami`, `/kspace:logout` — the agent runs the bundled CLI directly, no separate install step.
+This gives the agent a `kspace` skill and the slash commands `/kspace:login`, `/kspace:publish`, `/kspace:events`, `/kspace:revise`, `/kspace:whoami`, `/kspace:logout` — the agent runs the bundled CLI directly, no separate install step.
 
 ## Install as a standalone CLI
 
 ```bash
-npm install -g kspace-plugin
+npm install -g @kspace/plugin
 kspace login
 ```
 
-or run it ad hoc with `npx kspace-plugin login` (any command works after `npx kspace-plugin <cmd>`, since the package's only bin is `kspace`).
+or run it ad hoc with `npx @kspace/plugin login` (any command works after `npx @kspace/plugin <cmd>`, since the package's only bin is `kspace`).
 
 ## Usage
 
