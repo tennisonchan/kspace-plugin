@@ -5,11 +5,15 @@
 //   kspace login              Connect this agent (opens the browser to sign in)
 //   kspace publish <file.md>  Publish a markdown file and print the review link
 //     [--title "..."] [--ask "..."]  Optional title and reviewer instructions
+//   kspace events             Show comments and the decision on the last publish
+//     [--id <reviewRequestId>]        Or an explicit review request
+//   kspace revise <file.md>   Publish a new version into the same review thread
+//     [--artifact <artifactId>]       Defaults to the last published artifact
 //   kspace whoami             Show the connected space
 //   kspace logout             Forget stored credentials
 //
 // Config: KSPACE_URL (default https://app.kspace.studio). Credentials are
-// stored in ~/.kspace/credentials.json.
+// stored in ~/.kspace/credentials.json; the last publish in ~/.kspace/last.json.
 
 import fs from "node:fs";
 import os from "node:os";
@@ -20,6 +24,7 @@ import { fileURLToPath } from "node:url";
 export const BASE_URL = (process.env.KSPACE_URL || "https://app.kspace.studio").replace(/\/$/, "");
 export const CRED_DIR = path.join(os.homedir(), ".kspace");
 export const CRED_FILE = path.join(CRED_DIR, "credentials.json");
+export const LAST_FILE = path.join(CRED_DIR, "last.json");
 
 export function readCreds() {
   try {
@@ -36,6 +41,17 @@ export function writeCreds(creds) {
   } catch {
     /* best effort */
   }
+}
+export function readLast() {
+  try {
+    return JSON.parse(fs.readFileSync(LAST_FILE, "utf8"));
+  } catch {
+    return null;
+  }
+}
+export function writeLast(last) {
+  fs.mkdirSync(CRED_DIR, { recursive: true, mode: 0o700 });
+  fs.writeFileSync(LAST_FILE, JSON.stringify(last, null, 2), { mode: 0o600 });
 }
 function die(msg) {
   console.error(msg);
@@ -132,7 +148,67 @@ async function publish(args) {
       },
     },
   });
+  writeLast({
+    artifactId: result.artifactId,
+    reviewRequestId: result.reviewRequestId,
+    reviewUrl: result.reviewUrl,
+    title,
+  });
   console.log(`\n  Published "${title}"`);
+  console.log(`  Review link: ${result.reviewUrl}`);
+  console.log(`  Check feedback later with: kspace events\n`);
+}
+
+async function events(args) {
+  const creds = readCreds();
+  if (!creds?.token) die("  Not connected. Run `kspace login` first.");
+  const { flags } = parseArgs(args);
+  const last = readLast();
+  const id = flags.id || last?.reviewRequestId;
+  if (!id) die("  No review to check. Publish first, or pass --id <reviewRequestId>.");
+  const data = await api(`/v1/review-requests/${encodeURIComponent(id)}/events`, { token: creds.token });
+  if (!data.events.length) {
+    console.log(`\n  No activity yet on "${last?.title ?? id}". Reviewers haven't commented or decided.\n`);
+    return;
+  }
+  console.log(`\n  Review activity for "${last?.title ?? id}":\n`);
+  for (const e of data.events) {
+    const p = e.payload;
+    if (e.type === "comment.created") {
+      const where = p.anchor?.type === "block" ? ` (on: ${(p.anchor.excerpt ?? "a block").slice(0, 60)})` : "";
+      console.log(`  💬 ${p.author?.displayName ?? "someone"}${where}:`);
+      console.log(`     ${String(p.body ?? "").split("\n").join("\n     ")}`);
+    } else if (e.type === "review.submitted") {
+      const mark = p.decision === "approved" ? "✅ approved" : `❌ ${p.decision ?? p.status}`;
+      console.log(`  ${mark} by ${p.reviewer?.displayName ?? "someone"}${p.comment ? `: ${p.comment}` : ""}`);
+    } else {
+      console.log(`  • ${e.type}`);
+    }
+  }
+  console.log("");
+}
+
+async function revise(args) {
+  const creds = readCreds();
+  if (!creds?.token) die("  Not connected. Run `kspace login` first.");
+  const { flags, positionals } = parseArgs(args);
+  if (positionals.length !== 1) die("  Usage: kspace revise <file.md> [--artifact <artifactId>]");
+  const last = readLast();
+  const artifactId = flags.artifact || last?.artifactId;
+  if (!artifactId) die("  No artifact to revise. Publish first, or pass --artifact <artifactId>.");
+  const body = fs.readFileSync(positionals[0], "utf8");
+  const result = await api(`/v1/artifacts/${encodeURIComponent(artifactId)}/versions`, {
+    method: "POST",
+    token: creds.token,
+    body: { artifact: { body } },
+  });
+  writeLast({
+    artifactId: result.artifactId,
+    reviewRequestId: result.reviewRequestId,
+    reviewUrl: result.reviewUrl,
+    title: last?.title ?? "revision",
+  });
+  console.log(`\n  Published v${result.versionNumber} into the same review thread.`);
   console.log(`  Review link: ${result.reviewUrl}\n`);
 }
 
@@ -164,9 +240,16 @@ const isMain = (() => {
 })();
 if (isMain) {
   const [cmd, ...args] = process.argv.slice(2);
-  const run = { login, publish: () => publish(args), whoami, logout }[cmd];
+  const run = {
+    login,
+    publish: () => publish(args),
+    events: () => events(args),
+    revise: () => revise(args),
+    whoami,
+    logout,
+  }[cmd];
   if (!run) {
-    console.log("Usage: kspace <login|publish|whoami|logout>");
+    console.log("Usage: kspace <login|publish|events|revise|whoami|logout>");
     process.exit(cmd ? 1 : 0);
   }
   run().catch((err) => die(`  ${err.message}`));

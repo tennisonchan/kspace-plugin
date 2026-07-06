@@ -27,9 +27,13 @@ or run it ad hoc with `npx kspace-plugin login` (any command works after `npx ks
 ```bash
 kspace login                                  # connect this agent (opens the browser to sign in)
 kspace publish doc.md --title "..." --ask "..."  # publish a markdown file, prints the review link
+kspace events                                 # comments + decision on the last publish (--id for older)
+kspace revise doc.md                          # publish a new version into the same review thread
 kspace whoami                                 # show the connected space
 kspace logout                                 # forget stored credentials
 ```
+
+`publish → events → revise` is the whole collaboration loop: humans comment inline and approve or request changes on the review page (and can pull in more reviewers with the page's Share button — recipients read without an account); the agent reads that feedback with `events` and answers with `revise`.
 
 `login` starts a device-authorization flow, like `gh auth login`: it prints a URL and a short confirmation code, opens the browser, and waits (~10 minutes) for the user to sign in and confirm the code on the KSpace side. Once approved, the agent receives a token scoped to that user's space and stores it in `~/.kspace/credentials.json` (mode `0600`).
 

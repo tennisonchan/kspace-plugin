@@ -12,7 +12,9 @@ const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "kspace-test-"));
 process.env.HOME = tmpHome;
 process.env.USERPROFILE = tmpHome;
 
-const { parseArgs, writeCreds, readCreds, CRED_FILE } = await import("../bin/kspace.mjs");
+const { parseArgs, writeCreds, readCreds, writeLast, readLast, CRED_FILE, LAST_FILE } = await import(
+  "../bin/kspace.mjs"
+);
 
 test("parseArgs separates flags with values from positionals", () => {
   const { flags, positionals } = parseArgs(["doc.md", "--title", "My title", "--ask", "check this"]);
@@ -40,6 +42,18 @@ test("writeCreds restricts the credentials file to owner read/write only", () =>
 test("readCreds returns null when no credentials file exists", () => {
   fs.rmSync(CRED_FILE, { force: true });
   assert.equal(readCreds(), null);
+});
+
+test("writeLast/readLast round-trip the last publish", () => {
+  writeLast({ artifactId: "art_1", reviewRequestId: "rr_1", reviewUrl: "https://x/r/t", title: "Doc" });
+  assert.deepEqual(readLast(), {
+    artifactId: "art_1",
+    reviewRequestId: "rr_1",
+    reviewUrl: "https://x/r/t",
+    title: "Doc",
+  });
+  fs.rmSync(LAST_FILE, { force: true });
+  assert.equal(readLast(), null);
 });
 
 test("CLI dispatcher runs when invoked through a symlink (npm .bin shim)", () => {
