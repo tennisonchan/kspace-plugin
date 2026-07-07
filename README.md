@@ -13,6 +13,14 @@ Zero runtime dependencies: `bin/kspace.mjs` only uses Node built-ins and global 
 
 This gives the agent a `kspace` skill and the slash commands `/kspace:login`, `/kspace:publish`, `/kspace:events`, `/kspace:revise`, `/kspace:whoami`, `/kspace:logout` — the agent runs the bundled CLI directly, no separate install step.
 
+## One-command setup
+
+```bash
+npx @kspace/plugin setup
+```
+
+Installs the Claude Code plugin (when the `claude` CLI is present) and connects the agent — the closest thing to one-click: open the browser when prompted, sign in, confirm the code.
+
 ## Install as a standalone CLI
 
 ```bash
@@ -25,6 +33,7 @@ or run it ad hoc with `npx @kspace/plugin login` (any command works after `npx @
 ## Usage
 
 ```bash
+kspace setup                                  # one-shot: install the Claude Code plugin + connect
 kspace login                                  # connect this agent (opens the browser to sign in)
 kspace publish doc.md --title "..." --ask "..."  # publish a markdown file, prints the review link
 kspace events                                 # comments + decision on the last publish (--id for older)

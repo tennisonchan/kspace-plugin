@@ -9,6 +9,8 @@
 //     [--id <reviewRequestId>]        Or an explicit review request
 //   kspace revise <file.md>   Publish a new version into the same review thread
 //     [--artifact <artifactId>]       Defaults to the last published artifact
+//   kspace setup              One-shot: install the Claude Code plugin (if the
+//                             `claude` CLI is present) and connect this agent
 //   kspace whoami             Show the connected space
 //   kspace logout             Forget stored credentials
 //
@@ -18,7 +20,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 export const BASE_URL = (process.env.KSPACE_URL || "https://app.kspace.studio").replace(/\/$/, "");
@@ -212,6 +214,30 @@ async function revise(args) {
   console.log(`  Review link: ${result.reviewUrl}\n`);
 }
 
+async function setup() {
+  // One-shot onboarding: install the Claude Code plugin when the CLI is
+  // available, then connect this agent. No shell — fixed argv only.
+  const claude = spawnSync("claude", ["--version"], { stdio: "ignore" });
+  if (claude.error || claude.status !== 0) {
+    console.log("\n  Claude Code CLI not found — skipping plugin install.");
+    console.log("  (In Claude Code, run: /plugin marketplace add tennisonchan/kspace-plugin)\n");
+  } else {
+    const run = (args, label) => {
+      const res = spawnSync("claude", args, { stdio: "inherit" });
+      if (res.status !== 0) console.error(`  ${label} did not complete — you can run it manually later.`);
+      return res.status === 0;
+    };
+    console.log("\n  Installing the kspace plugin into Claude Code…\n");
+    run(["plugin", "marketplace", "add", "tennisonchan/kspace-plugin"], "marketplace add");
+    run(["plugin", "install", "kspace@kspace-plugin"], "plugin install");
+  }
+  if (readCreds()?.token) {
+    console.log("  Already connected — you're all set.\n");
+    return;
+  }
+  await login();
+}
+
 async function whoami() {
   const creds = readCreds();
   if (!creds?.token) die("  Not connected. Run `kspace login`.");
@@ -241,6 +267,7 @@ const isMain = (() => {
 if (isMain) {
   const [cmd, ...args] = process.argv.slice(2);
   const run = {
+    setup,
     login,
     publish: () => publish(args),
     events: () => events(args),
@@ -249,7 +276,7 @@ if (isMain) {
     logout,
   }[cmd];
   if (!run) {
-    console.log("Usage: kspace <login|publish|events|revise|whoami|logout>");
+    console.log("Usage: kspace <setup|login|publish|events|revise|whoami|logout>");
     process.exit(cmd ? 1 : 0);
   }
   run().catch((err) => die(`  ${err.message}`));

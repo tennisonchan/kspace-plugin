@@ -1,6 +1,6 @@
 {
   "name": "@kspace/plugin",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Connect an AI agent (Claude Code, Codex, or any CLI-capable agent) to a KSpace for publishing artifacts for human review.",
   "type": "module",
   "license": "MIT",
